@@ -1,2 +1,2 @@
-# COS226, Algorithms and Data Structures 
-Princeton University
+# COS226
+Algorithms and Data Structures, Princeton University
