@@ -1,2 +1,2 @@
-# Algo4
-Algorithms,  4th Edition, Princeton University
+# COS226, Algorithms and Data Structures 
+Princeton University
