@@ -4,6 +4,7 @@ import java.awt.Color;
 public class SeamCarver {
 
     private static final double BORDERENERGY = 1000;
+    // use int[][] to save the memory instead of Color[][]
     private int[][] pixels;
     private boolean isTranposed;
 
@@ -106,9 +107,11 @@ public class SeamCarver {
         int fromRow = getRow(from);
         int toCol = getCol(to);
         int toRow = getRow(to);
-        if (distTo[toRow][toCol] > distTo[fromRow][fromCol] + energy(toCol, toRow))
+        if (distTo[toRow][toCol] >
+                distTo[fromRow][fromCol] + energy(toCol, toRow))
         {
-            distTo[toRow][toCol] = distTo[fromRow][fromCol] + energy(toCol, toRow);
+            distTo[toRow][toCol] =
+                    distTo[fromRow][fromCol] + energy(toCol, toRow);
             edgeTo[toRow][toCol] = from;
             return true;
         }
@@ -164,7 +167,8 @@ public class SeamCarver {
         if (!checkRange(x, y))
             throw new java.lang.IllegalArgumentException();
 
-        if (x == 0 || y == 0 || x == pixels[0].length-1 || y == pixels.length-1)
+        if (x == 0 || y == 0 ||
+                x == pixels[0].length-1 || y == pixels.length-1)
             return BORDERENERGY;
         else {
             return Math.sqrt(getEnergySquard(x, y));
@@ -195,12 +199,14 @@ public class SeamCarver {
             for (int col = 0; col < pixels[0].length; col++) {
                 // col -1
                 if (col > 0)
-                    relax(distTo, edgeTo, get1D(col - 1, row - 1), get1D(col, row));
+                    relax(distTo, edgeTo, get1D(col - 1, row - 1),
+                            get1D(col, row));
                 // col
                 relax(distTo, edgeTo, get1D(col, row - 1), get1D(col, row));
                 // col + 1
                 if (col < pixels[0].length - 1)
-                    relax(distTo, edgeTo, get1D(col + 1, row - 1), get1D(col, row));
+                    relax(distTo, edgeTo, get1D(col + 1, row - 1),
+                            get1D(col, row));
             }
         }
 
@@ -238,7 +244,8 @@ public class SeamCarver {
         for (int row = 0; row < pixels.length; row++) {
             // remove the seam in pixel
             System.arraycopy(pixels[row], 0, newPixels[row], 0, seam[row]);
-            System.arraycopy(pixels[row], seam[row]+1, newPixels[row], seam[row], pixels[0].length - 1 - seam[row]);
+            System.arraycopy(pixels[row], seam[row]+1, newPixels[row],
+                    seam[row], pixels[0].length - 1 - seam[row]);
         }
 
         pixels = newPixels;
