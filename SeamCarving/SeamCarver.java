@@ -1,12 +1,21 @@
 import edu.princeton.cs.algs4.Picture;
-
-import java.awt.*;
+import java.awt.Color;
 
 public class SeamCarver {
 
-    private Color[][] pixels;
-    private double[][] energyPixels;
-    private static final double borderEnergy = 1000;
+    private static final double BORDERENERGY = 1000;
+    private int[][] pixels;
+    private boolean isTranposed;
+
+    // create a seam carver object based on the given picture
+    public SeamCarver(Picture picture) {
+        if (picture == null)
+            throw new java.lang.IllegalArgumentException();
+
+        pixels = new int[picture.height()][picture.width()];
+        generatePixels(picture);
+        isTranposed = false;
+    }
 
     private boolean checkRange(int column, int row) {
         if (row < 0 || row > pixels.length - 1)
@@ -20,16 +29,44 @@ public class SeamCarver {
      1. check an entry is outside its prescribed range;
      2. check if two adjacent entries differ by more than 1;
     */
-    private boolean checkSeam(int[] seam) {
+    private boolean checkSeam(int[] seam, boolean isVertial) {
+        int prev = -1, cur, max;
+
+        if (isVertial)
+            max = pixels[0].length;
+        else
+            max = pixels.length;
+
+        if (seam == null)
+            return false;
+
+        if (isVertial)
+            if (seam.length != pixels.length || max <= 1)
+                return false;
+        if (!isVertial)
+            if (seam.length != pixels[0].length || max <= 1)
+                return false;
+
+        for (int i = 0; i < seam.length; i++) {
+            cur = seam[i];
+
+            if (cur < 0 || cur >= max)
+                return false;
+            if (prev != -1 && Math.abs(cur-prev) > 1)
+                return false;
+            prev = cur;
+        }
+
+
         return true;
     }
 
     // pixel (x + 1, y) and pixel (x − 1, y)
     private double getEnergySquard(int x, int y) {
-        Color colorLeft = pixels[y][x - 1];
-        Color colorRight = pixels[y][x + 1];
-        Color colorUp = pixels[y - 1][x];
-        Color colorDown = pixels[y + 1][x];
+        Color colorLeft = new Color(pixels[y][x - 1]);
+        Color colorRight = new Color(pixels[y][x + 1]);
+        Color colorUp = new Color(pixels[y - 1][x]);
+        Color colorDown = new Color(pixels[y + 1][x]);
 
         return getRGB(colorLeft, colorRight) + getRGB(colorUp, colorDown);
     }
@@ -46,24 +83,16 @@ public class SeamCarver {
     private void generatePixels(Picture picture) {
         for (int row = 0; row < picture.height(); row++) {
             for (int col = 0; col < picture.width(); col++) {
-                pixels[row][col] = picture.get(col, row);
+                pixels[row][col] = picture.get(col, row).getRGB();
             }
         }
     }
 
-    private void generateEnergyPixels() {
-        for (int row = 0; row < energyPixels.length; row++) {
-            for (int col = 0; col < energyPixels[row].length; col++) {
-                energyPixels[row][col] = energy(col, row);
-            }
-        }
-    }
-
-    private int getCol(int d){
+    private int getCol(int d) {
         return d % (pixels[0].length);
     }
 
-    private int getRow(int d){
+    private int getRow(int d) {
         return d / (pixels[0].length);
     }
 
@@ -99,20 +128,14 @@ public class SeamCarver {
     }
 
     private void transposeAll() {
-
+        int[][] newColors = new int[pixels[0].length][pixels.length];
+        for (int row = 0; row < pixels.length; row++) {
+            for (int col = 0; col < pixels[row].length; col++) {
+                newColors[col][row] = pixels[row][col];
+            }
+        }
+        this.pixels = newColors;
     }
-
-    // create a seam carver object based on the given picture
-    public SeamCarver(Picture picture) {
-        if (picture == null)
-            throw new java.lang.IllegalArgumentException();
-
-        pixels = new Color[picture.height()][picture.width()];
-        generatePixels(picture);
-        energyPixels = new double[picture.height()][picture.width()];
-        generateEnergyPixels();
-    }
-
 
     // current picture
     public Picture picture() {
@@ -120,7 +143,7 @@ public class SeamCarver {
 
         for (int row = 0; row < pixels.length; row++) {
             for (int col = 0; col < pixels[row].length; col++) {
-                pic.set(col, row, pixels[row][col]);
+                pic.set(col, row, new Color(pixels[row][col]));
             }
         }
         return pic;
@@ -142,7 +165,7 @@ public class SeamCarver {
             throw new java.lang.IllegalArgumentException();
 
         if (x == 0 || y == 0 || x == pixels[0].length-1 || y == pixels.length-1)
-            return borderEnergy;
+            return BORDERENERGY;
         else {
             return Math.sqrt(getEnergySquard(x, y));
         }
@@ -153,11 +176,11 @@ public class SeamCarver {
         double[][] distTo = new double[pixels.length][pixels[0].length];
         int[][] edgeTo = new int[pixels.length][pixels[0].length];
 
-        //init distTo
+        // init distTo
         for (int row = 0; row < pixels.length; row++) {
             for (int col = 0; col < pixels[row].length; col++) {
                 if (row == 0) {
-                    distTo[row][col] = borderEnergy;
+                    distTo[row][col] = BORDERENERGY;
                     edgeTo[row][col] = get1D(col, row);
                 }
                 else {
@@ -167,21 +190,21 @@ public class SeamCarver {
             }
         }
 
-        //generate the distTo and edgeTo
+        // generate the distTo and edgeTo
         for (int row = 1; row < pixels.length; row++) {
             for (int col = 0; col < pixels[0].length; col++) {
-                //col -1
+                // col -1
                 if (col > 0)
                     relax(distTo, edgeTo, get1D(col - 1, row - 1), get1D(col, row));
-                //col
+                // col
                 relax(distTo, edgeTo, get1D(col, row - 1), get1D(col, row));
-                //col + 1
+                // col + 1
                 if (col < pixels[0].length - 1)
                     relax(distTo, edgeTo, get1D(col + 1, row - 1), get1D(col, row));
             }
         }
 
-        //find the minimum distTo
+        // find the minimum distTo
         int row = pixels.length - 1;
         double min = Double.POSITIVE_INFINITY;
         int minCol = 0;
@@ -197,28 +220,40 @@ public class SeamCarver {
 
     // sequence of indices for horizontal seam
     public int[] findHorizontalSeam() {
+        int[][] prevColors = this.pixels;
         transposeAll();
-        int[] path = findHorizontalSeam();
-        transposeAll();
-
+        int[] path = findVerticalSeam();
+        this.pixels = prevColors;
         return path;
     }
 
     // remove vertical seam from current picture
     public void removeVerticalSeam(int[] seam) {
-        if (seam == null || seam.length != pixels[0].length || checkSeam(seam)
-                || pixels.length <= 1)
+        if (!isTranposed && !checkSeam(seam, true))
             throw new java.lang.IllegalArgumentException();
 
+        int[][] newPixels =
+                new int[pixels.length][pixels[0].length-1];
+
+        for (int row = 0; row < pixels.length; row++) {
+            // remove the seam in pixel
+            System.arraycopy(pixels[row], 0, newPixels[row], 0, seam[row]);
+            System.arraycopy(pixels[row], seam[row]+1, newPixels[row], seam[row], pixels[0].length - 1 - seam[row]);
+        }
+
+        pixels = newPixels;
     }
 
     // remove horizontal seam from current picture
     public void removeHorizontalSeam(int[] seam) {
-        if (seam == null || seam.length != pixels[0].length || checkSeam(seam)
-                || pixels.length <= 1)
+        if (!checkSeam(seam, false))
             throw new java.lang.IllegalArgumentException();
 
-
+        transposeAll();
+        isTranposed = true;
+        removeVerticalSeam(seam);
+        transposeAll();
+        isTranposed = false;
     }
 
 }
